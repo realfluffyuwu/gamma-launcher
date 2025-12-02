@@ -2,10 +2,41 @@
 
 Starting G.A.M.M.A. .NET Launcher is not possible on GNU/Linux because of .NET / powershell scripts
 
+## Installation
+
+### The Fluffy Shortcut (Windows Specific)
+I rewrote this to make it easier for my friends to get into Gamma without needing go through the incredibly lengthy Gamma Discord Instructions.
+
+**Keep in mind you need 150gb+ Disk Space for the Full Installation, SSD Highly Recommended**
+
+Choose somewhere to make the `StalkerGamma` Main Folder and `Shift+RMB` inside the folder and open in Terminal
+- You can name it anything you want but make sure you use your folder name everywhere `StalkerGamma` is mentioned
+
+You need to download the latest [Release](<https://github.com/realfluffyuwu/gamma-launcher/releases/latest/download/gamma-launcher.exe>)
+Also download and install [unrar](<https://www.rarlab.com/rar/unrardll-720b2.exe>) dependency for the installation
+
+Place the Gamma Launcher inside the `StalkerGamma` folder after doing so copy this command block into your Terminal below to make all the folders
+```
+mkdir .\Anomaly
+mkdir .\Gamma
+mkdir .\Cache
+```
+After that to start the Installation copy this command and run it in the Terminal
+```
+.\gamma-launcher.exe full-install --anomaly ".\Anomaly" --gamma ".\Gamma" --cache-directory ".\Cache"
+```
+
+After all is said and Done, now you can open Mod Organiser inside the `Gamma` folder.
+It will ask you to create a new instance, you want to create a `portable` instance and pick the `Anomaly` Folder.
+Now it will say Profile not found or something and it should default to the Gamma one and Mod Organiser should have all the mods there.
+
+Mod Organiser should show **553~** mods as of `29-11-2025`
+
+### ^ The Fluffy Shortcut ^
+
+
 This is a reimplementation of G.AM.M.A. launcher used for the first setup. You will need to follow
 [DravenusRex's guide](https://github.com/DravenusRex/stalker-gamma-linux-guide) to have a working game.
-
-## Installation
 
 ### Using pip (from source)
 
@@ -24,16 +55,6 @@ If currently in your gamma-launcher folder, you can simply type `pip install .` 
 If all went well, you can now use the `gamma-launcher` command as intended.
 
 (Type `deactivate` to leave the virtual environment. Use the previous `source` command to re-enter it.)
-
-### Using easy-install
-
-Make sure you have a toolchain available to compile `7z` and *libunrar.so* and python3-venv installed then:
-
-```sh
-$ cd easy-install
-$ make -j$(nproc)
-$ sudo make install
-```
 
 ### Using release
 
