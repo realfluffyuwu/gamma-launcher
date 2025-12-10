@@ -79,7 +79,7 @@ $ sudo make install
 
 ### Using release
 
-By downloading gamma-launcher from the [latest release](https://github.com/Mord3rca/gamma-launcher/releases/latest), you can use it without any installation. Everything is self contained in an executable. Release built with Ubuntu.
+By downloading gamma-launcher from the [latest release](https://github.com/realfluffyuwu/gamma-launcher/releases/latest), you can use it without any installation. Everything is self contained in an executable. Release built with Ubuntu.
 
 Use the `--cache-directory` option to re-use previously downloaded files.
 
