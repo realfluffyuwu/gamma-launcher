@@ -1,12 +1,15 @@
 from pathlib import Path
 from platform import system
 from tempfile import TemporaryDirectory
+from typing import Callable
 
 from launcher.common import folder_to_install
-from launcher.mods import ModBase
 
 
 class HotfixPathCase:
+    """Class adding a method to `DefaultTempDir` object to fix
+    path case of files contained in temporary directory
+    """
 
     def _post_decompression_hotfix_fix_path_case(self, dir: Path) -> None:
         for path in filter(
@@ -15,13 +18,16 @@ class HotfixPathCase:
         ):
             for file in path.glob('**/*.*'):
                 t = file.relative_to(path.parent)
-                rp = str(t.parent).lower()
+                rp = str(t.parent).lower()  # TODO: Check if lowering filename too will be OK
                 nfolder = path.parent / rp
                 nfolder.mkdir(parents=True, exist_ok=True)
                 file.rename(nfolder / file.name)
 
 
 class HotfixMalformedArchive:
+    """Class adding a method to `DefaultTempDir` object to fix
+    path separator of files contained in temporary directory
+    """
 
     def _post_decompression_hotfix_00_malformed_archive(self, dir: Path) -> None:
         for path in dir.glob('*.*'):
@@ -37,17 +43,23 @@ class HotfixMalformedArchive:
 
 
 tempDirHotfixes = (HotfixPathCase, HotfixMalformedArchive) if not system() == 'Windows' else ()
+"List of hotfixes added to `DefaultTempDir`"
 
 
 class DefaultTempDir(TemporaryDirectory, *tempDirHotfixes):
+    """A `tempfile.TemporaryDirectory` specialization to apply hotpatches to content
+    Argument(s)
+    * extract_func -- A callable used to execute an action before
+    executing hotpatch method registered in this class
+    """
 
-    def __init__(self, mod: ModBase, **kwargs) -> None:
-        TemporaryDirectory.__init__(self, **kwargs)
-        self._mod = mod
+    def __init__(self, extract_func: Callable[[Path], None], *args, **kwargs) -> None:
+        TemporaryDirectory.__init__(self, *args, **kwargs)
+        self._extract_func = extract_func
 
     def __enter__(self) -> Path:
         s = Path(TemporaryDirectory.__enter__(self))
-        self._mod.extract(s, tmpdir=s)
+        self._extract_func(s)
         for hotfix in sorted(filter(lambda x: 'hotfix' in x, dir(self))):
             getattr(self, hotfix)(s)
         return s

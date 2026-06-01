@@ -12,6 +12,10 @@ from launcher.exceptions import HashError, ModDBDownloadError
 
 
 class CheckAnomaly:
+    """Verify Anomaly files based on *\\<path/to/anomaly\\>/tools/checksums.md5*
+
+    /!\\ Only works if GAMMA installation did not patched *bin/* folder.
+    """
 
     arguments: dict = {
         **anomaly_arg
@@ -44,11 +48,17 @@ class CheckAnomaly:
 
 
 class CheckMD5:
+    "Verify checksum of all mod file required by GAMMA"
 
     arguments: dict = {
         **gamma_arg,
         "--update-cache": {
             "help": "Update download cache if file is missing or MD5 do not match",
+            "required": False,
+            "action": "store_true"
+        },
+        "--remove-unused": {
+            "help": "After hash checks, remove unused archive in download directory",
             "required": False,
             "action": "store_true"
         },
@@ -64,22 +74,51 @@ class CheckMD5:
 
     help: str = "Check MD5 hash for all addons"
 
+    def _purge_unused_files(self, dl_dir: Path, downloaders) -> None:
+        files_in_use = set()
+        for i in downloaders:
+            try:
+                files_in_use.add(i.archive.absolute())
+            except Exception:
+                continue
+
+        # Extra files to keep from Anomaly Install / Gamma Setup commands
+        files_in_use.add(dl_dir / "Anomaly-1.5.3-Full.2.7z")
+        files_in_use.add(dl_dir / "modorganizer-Mod.Organizer-2.5.2.7z")
+
+        for archive in dl_dir.iterdir():
+            if archive.name.endswith(".git") or archive.absolute() in files_in_use:
+                continue
+
+            print(f"[+] Purging {archive}...")
+            archive.unlink()
+
     def run(self, args) -> None:
         errors = []
 
         gamma = Path(args.gamma).expanduser()
         dl_dir = gamma / "downloads"
 
-        mod_maker = read_mod_maker(
-            gamma / ".Grok's Modpack Installer" / "G.A.M.M.A" / "modpack_data"
-        )
+        downloaders = list({
+            i.downloader.url: i.downloader for i in filter(
+                lambda x: x.downloader,
+                read_mod_maker(gamma / ".Grok's Modpack Installer" / "G.A.M.M.A" / "modpack_data")
+            )
+        }.values())
 
+        print(
+              '[*] WARNING: This is a bit intensive for ModDB. You may be heavily checked by Cloudflare '
+              'and this commands will freeze & spin a CPU to 100% if this is the case.'
+        )
         print('-- Starting MD5 Check')
-        for i in mod_maker:
+        for i in downloaders:
             try:
                 i.check(dl_dir, args.update_cache)
             except (HashError, ModDBDownloadError) as e:
                 errors.append(str(e))
+
+        if args.remove_unused:
+            self._purge_unused_files(dl_dir, downloaders)
 
         print("\n".join(errors))
 

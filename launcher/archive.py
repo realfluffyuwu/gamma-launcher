@@ -1,13 +1,25 @@
+"""
+Module for archive extraction & listing
+
+Currently support 7z, RAR & ZIP
+"""
+
 from platform import system
 from py7zr import SevenZipFile
 from subprocess import run
 from typing import List
-from py7zr.exceptions import UnsupportedCompressionMethodError
 from unrar.rarfile import RarFile
 from zipfile import ZipFile
 
 
-def get_mime_from_file(filename) -> str:
+def get_mime_from_file(filename: str) -> str:
+    """Get MIME type from a file
+
+    Argument(s):
+    * filename -- File path as a string
+
+    Return the MIME type of the file or except if unknown
+    """
     with open(filename, 'rb') as f:
         d = f.read(16)
 
@@ -40,7 +52,6 @@ if system() == 'Windows':
         'application/x-7z-compressed': _win32_extract,
         'application/x-rar': _win32_extract,
         'application/zip': _win32_extract,
-        'application/x-7z-compressed+bcj2': _win32_extract,
     }
 else:
     def _7zip_bcj2_workaround(f: str, p: str) -> None:
@@ -48,27 +59,42 @@ else:
             raise RuntimeError(f'7z error while decompressing {f}')
 
     def _7zip_extractall(f: str, p: str) -> None:
-        try:
-            SevenZipFile(f).extractall(p)
-        except UnsupportedCompressionMethodError as e:
-            print(e.message)
-            print("Fallback to 7z binary for extraction.")
-            _7zip_bcj2_workaround(f, p)
+        archive = SevenZipFile(f)
+
+        _7zip_bcj2_workaround(f, p) if 'BCJ2*' in archive.archiveinfo().method_names else archive.extractall(p)
 
     _extract_func_dict = {
         'application/x-7z-compressed': _7zip_extractall,
         'application/x-rar': lambda f, p: RarFile(f'{f}').extractall(f'{p}'),
         'application/zip': lambda f, p: ZipFile(f).extractall(p),
-        'application/x-7z-compressed+bcj2': _7zip_bcj2_workaround
     }
 
 
 def extract_archive(filename: str, path: str, mime: str = None) -> None:
+    """Extract the archive to a directory
+
+    Argument(s):
+    * filename -- File path of the archive to extract as str
+    * path -- Path where to extract the archive content as str
+
+    Keyword argument(s):
+    * mime -- Set a MIME type instead of determining it with `get_mime_from_file`
+    """
     mime = mime or get_mime_from_file(filename)
     _extract_func_dict.get(mime)(filename, path)
 
 
 def list_archive_content(filename: str, mime: str = None) -> List[str]:
+    """List archive content
+
+    Argument(s):
+    * filename -- File path of the archive to extract as str
+
+    Keyword argument(s):
+    * mime -- Set a MIME type instead of determining it with `get_mime_from_file`
+
+    Return a list of archive member path as string
+    """
     mime = mime or get_mime_from_file(filename)
     return {
         'application/x-7z-compressed': lambda f: SevenZipFile(f).getnames(),
